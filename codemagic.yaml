@@ -1,17 +1,16 @@
 workflows:
   android-debug:
-    name: Build with p4a (Automated)
-    instance_type: mac_mini_m1
-    environment:
-      docker: true
+    name: Build APK on Linux
+    instance_type: linux_x2
     scripts:
-      - name: Build APK with p4a
+      - name: Build and Package
         script: |
-          # 1. بناء صورة الدوكير
+          # 1. بناء صورة الدوكير (المصنع الذي جهزناه)
           docker build -t soccer-p4a-builder .
           
-          # 2. تشغيل البناء مع الموافقة التلقائية على التراخيص (yes | ...)
-          # وتحديد الملف الرئيسي بدقة داخل المجلد الفرعي
+          # 2. تشغيل عملية البناء داخل الحاوية
+          # استخدام yes للموافقة التلقائية على التراخيص
+          # وتحديد المسار الصحيح للملف الرئيسي في مجلد service
           docker run --rm -v $(pwd):/workspace soccer-p4a-builder \
             /bin/bash -c "yes | sdkmanager --licenses > /dev/null && \
             p4a apk --private /workspace \
