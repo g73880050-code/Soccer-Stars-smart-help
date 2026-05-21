@@ -1,0 +1,25 @@
+workflows:
+  android-debug:
+    name: Build with Docker Container
+    instance_type: mac_mini_m1
+    environment:
+      docker: true
+    scripts:
+      - name: Build APK inside Docker
+        script: |
+          # 1. بناء صورة الدوكير (الصندوق) من ملف Dockerfile الخاص بك
+          docker build -t soccer-builder .
+          
+          # 2. تشغيل الحاوية وتنفيذ أمر البناء p4a بداخلها
+          # نستخدم -v لربط المجلد الحالي بداخل الحاوية لضمان وصولها للملفات
+          docker run --rm -v $(pwd):/app soccer-builder \
+            p4a apk --private /app \
+              --package com.soccerstars.analyzer \
+              --name "Soccer Stars Analyzer" \
+              --bootstrap sdl2 \
+              --requirements python3,kivy,numpy,opencv,pyjnius \
+              --arch arm64-v8a \
+              --android-api 33
+    artifacts:
+      - "*.apk"
+
