@@ -1,11 +1,15 @@
 workflows:
   android-debug:
-    name: Build APK
-    # حذفنا سطر instance_type
+    name: Build APK with Docker
+    # إجبار النظام على استخدام جهاز Linux بدلاً من الماك
+    instance_type: linux_x2
     scripts:
       - name: Build and Package
         script: |
+          # 1. بناء صورة الدوكير
           docker build -t soccer-p4a-builder .
+          
+          # 2. تشغيل الحاوية
           docker run --rm -v $(pwd):/workspace soccer-p4a-builder \
             /bin/bash -c "yes | sdkmanager --licenses > /dev/null && \
             p4a apk --private /workspace \
