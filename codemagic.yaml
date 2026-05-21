@@ -3,12 +3,16 @@ workflows:
     name: Build APK without Docker
     instance_type: mac_mini_m1
     scripts:
+      - name: Install Prerequisites
+        script: |
+          # تثبيت الحزمة التي اشتكى منها النظام
+          brew install automake
       - name: Setup Environment and Build
         script: |
-          # 1. إجبار البيئة على عدم انتظار مدخلات من المستخدم
+          # إجبار البيئة على الموافقة التلقائية على أي سؤال
           export P4A_FORCE_YES=1
           
-          # 2. تحديث وتثبيت الأدوات
+          # تثبيت الأدوات الأساسية
           pip3 install --upgrade pip
           pip3 install cython==0.29.33
           pip3 install python-for-android
@@ -16,10 +20,10 @@ workflows:
           pip3 install opencv-python-headless==4.6.0.66
           pip3 install pyjnius
           
-          # 3. قبول تراخيص الأندرويد
+          # قبول التراخيص
           yes | sdkmanager --licenses
           
-          # 4. بناء الـ APK مع إجبار الموافقة (Force Yes)
+          # البناء مع تفعيل وضع الإصدار القسري
           p4a apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
@@ -30,4 +34,3 @@ workflows:
             --android-api 33 --release --force
     artifacts:
       - "*.apk"
-
