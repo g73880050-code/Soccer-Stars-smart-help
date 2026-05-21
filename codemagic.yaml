@@ -1,7 +1,7 @@
 workflows:
   android-debug:
     name: Build APK
-    instance_type: linux
+    # حذفنا سطر instance_type
     scripts:
       - name: Build and Package
         script: |
@@ -18,3 +18,4 @@ workflows:
               --android-api 33"
     artifacts:
       - "*.apk"
+
