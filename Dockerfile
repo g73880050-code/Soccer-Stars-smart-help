@@ -101,13 +101,9 @@ RUN test -f "$ANDROID_HOME/build-tools/33.0.0/aidl" || \
     echo "ndk-build OK: $ANDROIDNDK/ndk-build"
 
 # ── 8. sdkmanager interceptor (belt + suspenders) ───────────────────────────
-# If p4a's bootstrap tries to request build-tools;37 or ;36 during the build,
-# the interceptor silently rewrites it to 33.0.0 and calls the real binary.
-# The real binary is /opt/android/sdk/cmdline-tools/latest/bin/sdkmanager.
 RUN REAL="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" && \
     cat > /usr/local/bin/sdkmanager << WRAPPER
 #!/usr/bin/env bash
-# sdkmanager interceptor — rewrites 36/37 → 33.0.0, strips --update
 REAL_BIN="$REAL"
 ARGS=()
 for arg in "\$@"; do
@@ -123,7 +119,6 @@ WRAPPER
 RUN chmod +x /usr/local/bin/sdkmanager
 
 # ── 9. Symlink build-tools/37.0.0 → 33.0.0 ─────────────────────────────────
-# Final safety net for any Gradle script that constructs the path as a literal.
 RUN ln -sf "$ANDROID_HOME/build-tools/33.0.0" \
            "$ANDROID_HOME/build-tools/37.0.0"
 
@@ -136,6 +131,10 @@ RUN echo "=== Build image verification ===" && \
     which aidl && aidl --version && \
     echo "NDK: $ANDROIDNDK" && ls "$ANDROIDNDK/ndk-build" && \
     echo "=== Image ready ==="
+
+# ── 11. Copy and install project requirements ──────────────────────────────
+COPY requirements.txt /workspace/
+RUN pip install -r /workspace/requirements.txt
 
 # ── Default working directory ────────────────────────────────────────────────
 WORKDIR /workspace
