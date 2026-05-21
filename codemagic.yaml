@@ -2,25 +2,21 @@ workflows:
   android-debug:
     name: Build APK without Docker
     instance_type: mac_mini_m1
-    environment:
-      python: 3.9
     scripts:
       - name: Setup Environment and Build
         script: |
-          # 1. تحديث البيئة وتثبيت الأدوات الأساسية
-          pip install --upgrade pip
-          pip install cython==0.29.33
-          pip install python-for-android
+          # 1. تثبيت الحزم المطلوبة مباشرة
+          pip3 install --upgrade pip
+          pip3 install cython==0.29.33
+          pip3 install python-for-android
+          pip3 install numpy==1.21.6
+          pip3 install opencv-python-headless==4.6.0.66
+          pip3 install pyjnius
           
-          # 2. تثبيت المكتبات بإصدارات محددة لضمان التوافق (بديل الدوكر)
-          pip install numpy==1.21.6
-          pip install opencv-python-headless==4.6.0.66
-          pip install pyjnius
-          
-          # 3. قبول تراخيص الأندرويد
+          # 2. قبول تراخيص الأندرويد
           yes | sdkmanager --licenses
           
-          # 4. بناء الـ APK مباشرة
+          # 3. بناء الـ APK
           p4a apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
