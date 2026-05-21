@@ -1,30 +1,6 @@
 # =============================================================================
-# Soccer Stars Analyzer — Build Image
+# Soccer Stars Analyzer — p4a Build Image
 # =============================================================================
-# Base: ubuntu:22.04 (glibc 2.35 — compatible with NDK r25b)
-#
-# What is frozen inside this image
-# ---------------------------------
-#   Python          3.11
-#   Java            17 (temurin via apt)
-#   Android SDK     platform-tools, build-tools 33.0.0, platforms android-33
-#   Android NDK     r25b  (25.1.8937393)
-#   Buildozer       1.5.0
-#   Cython          3.0.10
-#   All SDK licenses pre-accepted
-#
-# The sdkmanager interceptor is also baked in (/usr/local/bin/sdkmanager).
-# If python-for-android's bootstrap tries to call sdkmanager to fetch a
-# newer build-tools version, the interceptor silently rewrites the request
-# back to 33.0.0 and calls the real binary.
-#
-# Build locally
-# -------------
-#   docker build -t soccer-stars-builder .
-#   docker run --rm -v "$PWD":/workspace -w /workspace soccer-stars-builder \
-#     buildozer android debug
-# =============================================================================
-
 FROM ubuntu:22.04
 
 # ── Non-interactive apt ──────────────────────────────────────────────────────
@@ -41,10 +17,6 @@ ENV ANDROIDAPI=33
 ENV ANDROIDMINAPI=26
 ENV ANDROIDNDKAPI=26
 
-# Gradle: disable daemon + block its own SDK downloader + cap heap
-ENV GRADLE_OPTS="-Dorg.gradle.daemon=false -Dandroid.builder.sdkDownload=false -Dorg.gradle.jvmargs=-Xmx3g"
-
-# PATH — build-tools 33 is prepended so every aidl/d8/apksigner lookup wins
 ENV PATH="/usr/local/bin:/opt/android/sdk/build-tools/33.0.0:/opt/android/sdk/platform-tools:/opt/android/sdk/cmdline-tools/latest/bin:${PATH}"
 
 # ── 1. System packages ───────────────────────────────────────────────────────
@@ -69,8 +41,9 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
     update-alternatives --install /usr/bin/python  python  /usr/bin/python3.11 1 && \
     python3 -m pip install --upgrade pip wheel setuptools
 
-# ── 3. Buildozer 1.5.0 + Cython ─────────────────────────────────────────────
-RUN pip install "cython==3.0.10" "buildozer==1.5.0"
+# ── 3. Install python-for-android & Cython ───────────────────────────────────
+# تم استبدال buildozer بـ python-for-android مباشرة
+RUN pip install "cython==3.0.10" "python-for-android"
 
 # ── 4. Android command-line tools ───────────────────────────────────────────
 RUN mkdir -p "$ANDROID_HOME/cmdline-tools" && \
@@ -85,22 +58,14 @@ RUN mkdir -p "$ANDROID_HOME/cmdline-tools" && \
 RUN yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses 2>/dev/null || true && \
     yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses 2>/dev/null || true
 
-# ── 6. Install SDK components — ONLY what we need ───────────────────────────
+# ── 6. Install SDK components ───────────────────────────────────────────────
 RUN "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
       "platform-tools" \
       "build-tools;33.0.0" \
       "platforms;android-33" \
       "ndk;25.1.8937393"
 
-# ── 7. Verify aidl and ndk-build are present ────────────────────────────────
-RUN test -f "$ANDROID_HOME/build-tools/33.0.0/aidl" || \
-      { echo "ERROR: aidl not found!"; exit 1; } && \
-    echo "aidl OK: $ANDROID_HOME/build-tools/33.0.0/aidl" && \
-    test -f "$ANDROIDNDK/ndk-build" || \
-      { echo "ERROR: ndk-build not found!"; exit 1; } && \
-    echo "ndk-build OK: $ANDROIDNDK/ndk-build"
-
-# ── 8. sdkmanager interceptor (belt + suspenders) ───────────────────────────
+# ── 7. sdkmanager interceptor ───────────────────────────────────────────────
 RUN REAL="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" && \
     cat > /usr/local/bin/sdkmanager << WRAPPER
 #!/usr/bin/env bash
@@ -118,23 +83,14 @@ exec "\$REAL_BIN" "\${ARGS[@]}"
 WRAPPER
 RUN chmod +x /usr/local/bin/sdkmanager
 
-# ── 9. Symlink build-tools/37.0.0 → 33.0.0 ─────────────────────────────────
-RUN ln -sf "$ANDROID_HOME/build-tools/33.0.0" \
-           "$ANDROID_HOME/build-tools/37.0.0"
-
-# ── 10. Final check ──────────────────────────────────────────────────────────
-RUN echo "=== Build image verification ===" && \
-    java -version && \
+# ── 8. Final verification ───────────────────────────────────────────────────
+RUN echo "=== p4a Build image verification ===" && \
     python --version && \
-    buildozer --version && \
-    which sdkmanager && sdkmanager --version && \
-    which aidl && aidl --version && \
-    echo "NDK: $ANDROIDNDK" && ls "$ANDROIDNDK/ndk-build" && \
+    p4a --version && \
     echo "=== Image ready ==="
 
-# ── 11. Copy and install project requirements ──────────────────────────────
+# ── 9. Install project requirements ─────────────────────────────────────────
 COPY requirements.txt /workspace/
 RUN pip install -r /workspace/requirements.txt
 
-# ── Default working directory ────────────────────────────────────────────────
 WORKDIR /workspace
