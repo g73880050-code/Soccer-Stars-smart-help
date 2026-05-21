@@ -3,18 +3,29 @@ workflows:
     name: Build APK with Docker on Mac
     instance_type: mac_mini_m1
     scripts:
-      - name: Install Docker and Build
+      - name: Install and Start Docker
         script: |
-          # 1. تثبيت الدوكر داخل الماك
+          # تثبيت Docker Desktop
           brew install --cask docker
-          open -a Docker
-          # الانتظار قليلاً ليتأكد النظام أن الدوكر يعمل
-          sleep 10
           
-          # 2. بناء صورة الدوكير (سيعمل الدوكر الآن لأننا ثبتناه)
+          # تشغيل محرك الدوكر مباشرة بدون فتح التطبيق الرسومي
+          # المسار التالي هو المسار المباشر للمحرك داخل التطبيق
+          /Applications/Docker.app/Contents/MacOS/Docker --unattended --quiet &
+          
+          # انتظار تفعيل المحرك (Daemon) - سننتظر حتى يستجيب الأمر docker info
+          echo "Waiting for Docker to start..."
+          until docker info > /dev/null 2>&1; do 
+            sleep 5
+            echo "Still waiting for Docker..."
+          done
+          echo "Docker is running!"
+          
+      - name: Build and Package
+        script: |
+          # بناء الصورة
           docker build -t soccer-p4a-builder .
           
-          # 3. تشغيل الحاوية
+          # تشغيل الحاوية
           docker run --rm -v $(pwd):/workspace soccer-p4a-builder \
             /bin/bash -c "yes | sdkmanager --licenses > /dev/null && \
             p4a apk --private /workspace \
