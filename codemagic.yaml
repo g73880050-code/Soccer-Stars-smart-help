@@ -1,24 +1,26 @@
 workflows:
   android-debug:
-    name: Build with p4a
+    name: Build with p4a (Automated)
     instance_type: mac_mini_m1
     environment:
       docker: true
     scripts:
       - name: Build APK with p4a
         script: |
-          # بناء الحاوية
+          # 1. بناء صورة الدوكير
           docker build -t soccer-p4a-builder .
           
-          # تشغيل البناء وتحديد المسار للملف الرئيسي داخل المجلد الفرعي
+          # 2. تشغيل البناء مع الموافقة التلقائية على التراخيص (yes | ...)
+          # وتحديد الملف الرئيسي بدقة داخل المجلد الفرعي
           docker run --rm -v $(pwd):/workspace soccer-p4a-builder \
+            /bin/bash -c "yes | sdkmanager --licenses > /dev/null && \
             p4a apk --private /workspace \
               --package com.soccerstars.analyzer \
-              --name "Soccer Stars Analyzer" \
+              --name 'Soccer Stars Analyzer' \
               --bootstrap sdl2 \
               --requirements python3,kivy,numpy,opencv-python-headless,pyjnius \
               --entrypoint /workspace/service/main.py \
               --arch arm64-v8a \
-              --android-api 33
+              --android-api 33"
     artifacts:
       - "*.apk"
