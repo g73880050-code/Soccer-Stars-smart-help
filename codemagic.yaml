@@ -8,6 +8,7 @@ workflows:
       - name: Build APK inside Docker
         script: |
           # 1. بناء صورة الدوكير (الصندوق) من ملف Dockerfile الخاص بك
+          # يعمل هذا الأمر على تثبيت كل شيء وتجهيز البيئة تلقائياً
           docker build -t soccer-builder .
           
           # 2. تشغيل الحاوية وتنفيذ أمر البناء p4a بداخلها
@@ -22,4 +23,3 @@ workflows:
               --android-api 33
     artifacts:
       - "*.apk"
-
