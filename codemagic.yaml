@@ -5,7 +5,10 @@ workflows:
     scripts:
       - name: Setup Environment and Build
         script: |
-          # 1. تثبيت الحزم المطلوبة مباشرة
+          # 1. إجبار البيئة على عدم انتظار مدخلات من المستخدم
+          export P4A_FORCE_YES=1
+          
+          # 2. تحديث وتثبيت الأدوات
           pip3 install --upgrade pip
           pip3 install cython==0.29.33
           pip3 install python-for-android
@@ -13,10 +16,10 @@ workflows:
           pip3 install opencv-python-headless==4.6.0.66
           pip3 install pyjnius
           
-          # 2. قبول تراخيص الأندرويد
+          # 3. قبول تراخيص الأندرويد
           yes | sdkmanager --licenses
           
-          # 3. بناء الـ APK
+          # 4. بناء الـ APK مع إجبار الموافقة (Force Yes)
           p4a apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
@@ -24,6 +27,7 @@ workflows:
             --requirements python3,kivy,numpy,opencv-python-headless,pyjnius \
             --entrypoint service/main.py \
             --arch arm64-v8a \
-            --android-api 33
+            --android-api 33 --release --force
     artifacts:
       - "*.apk"
+
