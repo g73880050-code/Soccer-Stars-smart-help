@@ -1,40 +1,33 @@
 workflows:
   android-debug:
-    name: Build APK with Docker on Mac
+    name: Build APK without Docker
     instance_type: mac_mini_m1
+    environment:
+      python: 3.9
     scripts:
-      - name: Install and Start Docker
+      - name: Setup Environment and Build
         script: |
-          # تثبيت Docker Desktop
-          brew install --cask docker
+          # 1. تحديث البيئة وتثبيت الأدوات الأساسية
+          pip install --upgrade pip
+          pip install cython==0.29.33
+          pip install python-for-android
           
-          # تشغيل محرك الدوكر مباشرة بدون فتح التطبيق الرسومي
-          # المسار التالي هو المسار المباشر للمحرك داخل التطبيق
-          /Applications/Docker.app/Contents/MacOS/Docker --unattended --quiet &
+          # 2. تثبيت المكتبات بإصدارات محددة لضمان التوافق (بديل الدوكر)
+          pip install numpy==1.21.6
+          pip install opencv-python-headless==4.6.0.66
+          pip install pyjnius
           
-          # انتظار تفعيل المحرك (Daemon) - سننتظر حتى يستجيب الأمر docker info
-          echo "Waiting for Docker to start..."
-          until docker info > /dev/null 2>&1; do 
-            sleep 5
-            echo "Still waiting for Docker..."
-          done
-          echo "Docker is running!"
+          # 3. قبول تراخيص الأندرويد
+          yes | sdkmanager --licenses
           
-      - name: Build and Package
-        script: |
-          # بناء الصورة
-          docker build -t soccer-p4a-builder .
-          
-          # تشغيل الحاوية
-          docker run --rm -v $(pwd):/workspace soccer-p4a-builder \
-            /bin/bash -c "yes | sdkmanager --licenses > /dev/null && \
-            p4a apk --private /workspace \
-              --package com.soccerstars.analyzer \
-              --name 'Soccer Stars Analyzer' \
-              --bootstrap sdl2 \
-              --requirements python3,kivy,numpy,opencv-python-headless,pyjnius \
-              --entrypoint /workspace/service/main.py \
-              --arch arm64-v8a \
-              --android-api 33"
+          # 4. بناء الـ APK مباشرة
+          p4a apk --private ./ \
+            --package com.soccerstars.analyzer \
+            --name "Soccer Stars Analyzer" \
+            --bootstrap sdl2 \
+            --requirements python3,kivy,numpy,opencv-python-headless,pyjnius \
+            --entrypoint service/main.py \
+            --arch arm64-v8a \
+            --android-api 33
     artifacts:
       - "*.apk"
