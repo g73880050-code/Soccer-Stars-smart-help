@@ -1,25 +1,31 @@
 workflows:
   android-debug:
-    name: Final Stable Build
+    name: Build APK - Path Fixed
     instance_type: mac_mini_m1
     scripts:
-      - name: Pre-install Dependencies
+      - name: Install and Setup Android SDK
         script: |
-          # تثبيت كل ما يحتاجه python-for-android لكي لا يسألنا عن أي شيء
-          brew install automake autoconf libtool
+          # 1. تثبيت أدوات الأندرويد
+          brew install --cask android-commandlinetools
+          
+          # 2. تحديد مسار الـ SDK الذي يستخدمه Mac في Codemagic
+          # المسار الافتراضي لـ brew على الماك هو /usr/local/opt/android-commandlinetools
+          export ANDROID_HOME=/usr/local/opt/android-commandlinetools
+          export PATH=$PATH:$ANDROID_HOME/bin
+          
+          # 3. قبول التراخيص (ضروري جداً)
+          yes | sdkmanager --licenses
+          
       - name: Build APK
         script: |
-          # إجبار التراخيص والموافقة التلقائية
           export P4A_FORCE_YES=1
-          export ANDROID_HOME=/usr/local/share/android-commandlinetools
+          export ANDROID_HOME=/usr/local/opt/android-commandlinetools
           
-          # تثبيت الأدوات
+          # تثبيت المكتبات
           pip3 install --upgrade pip
-          pip3 install cython==0.29.33
-          pip3 install python-for-android
-          pip3 install numpy==1.26.4
+          pip3 install cython==0.29.33 python-for-android numpy==1.26.4
           
-          # البناء بدون تحديثات وبدون أي تفاعل (Non-interactive)
+          # البناء
           python3 -m pythonforandroid.toolchain apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
