@@ -1,23 +1,29 @@
 workflows:
   android-debug:
-    name: Build APK with Locked Versions
+    name: Build APK - Full Setup
     instance_type: mac_mini_m1
     scripts:
-      - name: Install and Configure
+      - name: Install Android SDK and Tools
         script: |
-          # 1. إجبار البيئة على عدم تحديث أي شيء تلقائياً
+          # 1. تثبيت Android SDK عبر brew
+          brew install --cask android-commandlinetools
+          
+          # 2. تثبيت python-for-android وتوابعها
+          pip3 install --upgrade pip
+          pip3 install cython==0.29.33
+          pip3 install python-for-android
+          pip3 install numpy==1.26.4
+          pip3 install opencv-python-headless==4.6.0.66
+          pip3 install pyjnius
+          
+      - name: Build APK
+        script: |
           export P4A_FORCE_YES=1
           
-          # 2. تثبيت نسخة محددة من p4a ومنع pip من البحث عن تحديثات
-          pip3 install --no-cache-dir cython==0.29.33 python-for-android==2023.06.01
+          # مسار الـ SDK (نضيفه يدوياً إذا لزم الأمر)
+          export ANDROID_HOME=/usr/local/share/android-commandlinetools
           
-          # 3. تثبيت المكتبات بإصدارات "مقيدة"
-          pip3 install --no-cache-dir numpy==1.26.4 opencv-python-headless==4.6.0.66 pyjnius
-          
-          # 4. قبول التراخيص
-          yes | sdkmanager --licenses
-          
-          # 5. البناء مع استخدام خيار --no-update لضمان عدم سحب أي شيء جديد
+          # بناء التطبيق
           p4a apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
@@ -25,7 +31,6 @@ workflows:
             --requirements python3,kivy,numpy==1.26.4,opencv-python-headless==4.6.0.66,pyjnius \
             --entrypoint service/main.py \
             --arch arm64-v8a \
-            --android-api 33 \
-            --no-update --release --force
+            --android-api 33 --release --force
     artifacts:
       - "*.apk"
