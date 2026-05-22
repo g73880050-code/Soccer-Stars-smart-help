@@ -1,23 +1,31 @@
 workflows:
   android-debug:
-    name: Build APK with Docker
+    name: Build APK with Locked Versions
     instance_type: mac_mini_m1
     scripts:
-      - name: Build in Docker Container
+      - name: Install and Configure
         script: |
-          # نستخدم حاوية جاهزة تحتوي على أدوات الأندرويد والـ p4a
-          # هذه الطريقة تتخطى مشاكل التثبيت والبيئة الأساسية
-          docker run --rm -v $(pwd):/app -w /app \
-            kivy/buildozer:latest \
-            bash -c "pip install --upgrade pip && \
-                     pip install cython==0.29.33 python-for-android && \
-                     p4a apk --private ./ \
-                     --package com.soccerstars.analyzer \
-                     --name 'Soccer Stars Analyzer' \
-                     --bootstrap sdl2 \
-                     --requirements python3,kivy,numpy==1.26.4,opencv-python-headless==4.6.0.66,pyjnius \
-                     --entrypoint service/main.py \
-                     --arch arm64-v8a \
-                     --android-api 33"
+          # 1. إجبار البيئة على عدم تحديث أي شيء تلقائياً
+          export P4A_FORCE_YES=1
+          
+          # 2. تثبيت نسخة محددة من p4a ومنع pip من البحث عن تحديثات
+          pip3 install --no-cache-dir cython==0.29.33 python-for-android==2023.06.01
+          
+          # 3. تثبيت المكتبات بإصدارات "مقيدة"
+          pip3 install --no-cache-dir numpy==1.26.4 opencv-python-headless==4.6.0.66 pyjnius
+          
+          # 4. قبول التراخيص
+          yes | sdkmanager --licenses
+          
+          # 5. البناء مع استخدام خيار --no-update لضمان عدم سحب أي شيء جديد
+          p4a apk --private ./ \
+            --package com.soccerstars.analyzer \
+            --name "Soccer Stars Analyzer" \
+            --bootstrap sdl2 \
+            --requirements python3,kivy,numpy==1.26.4,opencv-python-headless==4.6.0.66,pyjnius \
+            --entrypoint service/main.py \
+            --arch arm64-v8a \
+            --android-api 33 \
+            --no-update --release --force
     artifacts:
       - "*.apk"
