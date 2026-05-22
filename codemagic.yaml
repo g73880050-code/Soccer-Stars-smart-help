@@ -1,22 +1,19 @@
 workflows:
   android-debug:
-    name: Build APK - Official SDK Path
+    name: Build APK - Final Fix
     instance_type: mac_mini_m1
-    environment:
-      # هذه المتغيرات ضرورية جداً ليتعرف p4a على مكان الـ SDK في Codemagic
-      android_sdk: $ANDROID_SDK_ROOT
     scripts:
-      - name: Install Dependencies
-        script: |
-          pip3 install --upgrade pip
-          pip3 install cython==0.29.33 python-for-android numpy==1.26.4
       - name: Build APK
         script: |
           # إجبار p4a على عدم طلب أي شيء تفاعلي
           export P4A_FORCE_YES=1
           export P4A_NO_PREREQUISITE_CHECK=1
           
-          # البناء باستخدام مسارات Codemagic الرسمية
+          # تثبيت المكتبات الأساسية
+          pip3 install --upgrade pip
+          pip3 install cython==0.29.33 python-for-android numpy==1.26.4 pyjnius
+          
+          # البناء باستخدام المسار المباشر للـ SDK الموجود في سيرفر الماك
           python3 -m pythonforandroid.toolchain apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
