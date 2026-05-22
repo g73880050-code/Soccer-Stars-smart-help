@@ -5,29 +5,30 @@ workflows:
     scripts:
       - name: Setup System & P4A
         script: |
-          # 1. تثبيت الأدوات الناقصة يدوياً لتهيئة البيئة
+          # 1. تهيئة النظام بالأدوات الأساسية
           brew update
           brew install automake libtool opencv
           
-          # 2. تثبيت بايثون وأدوات البناء الأساسية
+          # 2. تثبيت أدوات المضيف
           pip3 install --upgrade pip
           pip3 install cython==0.29.33 python-for-android
           
-          # 3. تجهيز مجلد الـ Wheels وتحميل OpenCV المترجم مسبقاً
+          # 3. تجهيز مجلد الـ Wheels المحلي وتحميل OpenCV
           mkdir -p ./wheels
           curl -L "https://files.pythonhosted.org/packages/43/ab/a24e03f0b094b8e559092490df1efbfa0ba00fc9dca02dfbb88647cbfdc6/opencv_python_headless-4.9.0.80-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl" -o ./wheels/opencv_python_headless-4.9.0.80-cp37-abi3-manylinux_2_17_aarch64.whl
           
-          # 4. إعداد متغيرات البيئة
+          # 4. إعداد متغيرات البيئة لإجبار التثبيت المحلي من المجلد
           export P4A_FORCE_YES=1
           export P4A_NO_PREREQUISITE_CHECK=1
           export P4A_WHEELS_DIR=./wheels
+          export PIP_FIND_LINKS=./wheels
           
-          # 5. أمر البناء بعد حذف علامات الـ (==) والإصدارات لمنع تفقد الـ Git المزعج
+          # 5. أمر البناء الصافي (حذفنا numpy و opencv لتجنب تذاكي الوصفات والـ Git)
           yes | python3 -m pythonforandroid.toolchain apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
             --bootstrap sdl2 \
-            --requirements python3,kivy,numpy,opencv-python-headless,pyjnius \
+            --requirements python3,kivy,pyjnius \
             --entrypoint service/main.py \
             --arch arm64-v8a \
             --android-api 33 \
