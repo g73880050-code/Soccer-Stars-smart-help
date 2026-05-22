@@ -5,7 +5,7 @@ workflows:
     scripts:
       - name: Setup System & P4A
         script: |
-          # 1. تحديث مدير حزم الماك وتثبيت الأدوات الناقصة يدوياً لمنع p4a من السؤال
+          # 1. تثبيت الأدوات الناقصة يدوياً لتهيئة البيئة
           brew update
           brew install automake libtool opencv
           
@@ -22,12 +22,12 @@ workflows:
           export P4A_NO_PREREQUISITE_CHECK=1
           export P4A_WHEELS_DIR=./wheels
           
-          # 5. استخدام أمر yes | لإجبار الأداة على الموافقة التلقائية على أي سؤال خفي
+          # 5. أمر البناء بعد حذف علامات الـ (==) والإصدارات لمنع تفقد الـ Git المزعج
           yes | python3 -m pythonforandroid.toolchain apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
             --bootstrap sdl2 \
-            --requirements python3,kivy,numpy==1.26.4,opencv-python-headless==4.9.0.80,pyjnius \
+            --requirements python3,kivy,numpy,opencv-python-headless,pyjnius \
             --entrypoint service/main.py \
             --arch arm64-v8a \
             --android-api 33 \
