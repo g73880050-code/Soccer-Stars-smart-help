@@ -5,21 +5,25 @@ workflows:
     scripts:
       - name: Setup System & P4A
         script: |
-          # 1. تثبيت الأدوات الأساسية
+          # 1. تحديث مدير حزم الماك وتثبيت الأدوات الناقصة يدوياً لمنع p4a من السؤال
+          brew update
+          brew install automake libtool opencv
+          
+          # 2. تثبيت بايثون وأدوات البناء الأساسية
           pip3 install --upgrade pip
           pip3 install cython==0.29.33 python-for-android
           
-          # 2. تحميل ملف OpenCV الجاهز مباشرة إلى السيرفر وتخطي قيد الـ 25 ميجا
+          # 3. تجهيز مجلد الـ Wheels وتحميل OpenCV المترجم مسبقاً
           mkdir -p ./wheels
           curl -L "https://files.pythonhosted.org/packages/43/ab/a24e03f0b094b8e559092490df1efbfa0ba00fc9dca02dfbb88647cbfdc6/opencv_python_headless-4.9.0.80-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl" -o ./wheels/opencv_python_headless-4.9.0.80-cp37-abi3-manylinux_2_17_aarch64.whl
           
-          # 3. متغيرات بيئة لمنع الأسئلة وتحديد مجلد الـ Wheels
+          # 4. إعداد متغيرات البيئة
           export P4A_FORCE_YES=1
           export P4A_NO_PREREQUISITE_CHECK=1
           export P4A_WHEELS_DIR=./wheels
           
-          # 4. أمر البناء الخارق
-          python3 -m pythonforandroid.toolchain apk --private ./ \
+          # 5. استخدام أمر yes | لإجبار الأداة على الموافقة التلقائية على أي سؤال خفي
+          yes | python3 -m pythonforandroid.toolchain apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
             --bootstrap sdl2 \
@@ -30,4 +34,3 @@ workflows:
             --release --force --no-update
     artifacts:
       - "*.apk"
-
