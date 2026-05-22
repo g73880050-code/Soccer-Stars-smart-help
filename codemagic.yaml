@@ -1,36 +1,23 @@
 workflows:
   android-debug:
-    name: Build APK without Docker
+    name: Build APK with Docker
     instance_type: mac_mini_m1
     scripts:
-      - name: Install Prerequisites
+      - name: Build in Docker Container
         script: |
-          # تثبيت الحزمة التي اشتكى منها النظام
-          brew install automake
-      - name: Setup Environment and Build
-        script: |
-          # إجبار البيئة على الموافقة التلقائية على أي سؤال
-          export P4A_FORCE_YES=1
-          
-          # تثبيت الأدوات الأساسية
-          pip3 install --upgrade pip
-          pip3 install cython==0.29.33
-          pip3 install python-for-android
-          pip3 install numpy==1.21.6
-          pip3 install opencv-python-headless==4.6.0.66
-          pip3 install pyjnius
-          
-          # قبول التراخيص
-          yes | sdkmanager --licenses
-          
-          # البناء مع تفعيل وضع الإصدار القسري
-          p4a apk --private ./ \
-            --package com.soccerstars.analyzer \
-            --name "Soccer Stars Analyzer" \
-            --bootstrap sdl2 \
-            --requirements python3,kivy,numpy,opencv-python-headless,pyjnius \
-            --entrypoint service/main.py \
-            --arch arm64-v8a \
-            --android-api 33 --release --force
+          # نستخدم حاوية جاهزة تحتوي على أدوات الأندرويد والـ p4a
+          # هذه الطريقة تتخطى مشاكل التثبيت والبيئة الأساسية
+          docker run --rm -v $(pwd):/app -w /app \
+            kivy/buildozer:latest \
+            bash -c "pip install --upgrade pip && \
+                     pip install cython==0.29.33 python-for-android && \
+                     p4a apk --private ./ \
+                     --package com.soccerstars.analyzer \
+                     --name 'Soccer Stars Analyzer' \
+                     --bootstrap sdl2 \
+                     --requirements python3,kivy,numpy==1.26.4,opencv-python-headless==4.6.0.66,pyjnius \
+                     --entrypoint service/main.py \
+                     --arch arm64-v8a \
+                     --android-api 33"
     artifacts:
       - "*.apk"
