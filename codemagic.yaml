@@ -9,31 +9,29 @@ workflows:
           brew update
           brew install automake libtool opencv
           
-          # 2. تثبيت أدوات المضيف وترقيتها لضمان وجودها في كل مكان
+          # 2. تثبيت أدوات المضيف
           pip3 install --upgrade pip setuptools wheel
           pip3 install "cython<3.0.0" python-for-android
           
           # 3. تجهيز مجلد الـ Wheels المحلي وتحميل OpenCV
           mkdir -p ./wheels
-          curl -L "https://files.pythonhosted.org/packages/43/ab/a24e03f0b094b8e559092490df1efbfa0ba00fc9dca02dfbb88647cbfdc6/opencv_python_headless-4.9.0.80-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl" -o ./wheels/opencv_python_headless-4.9.0.80-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+          curl -L "https://files.pythonhosted.org/packages/43/ab/a24e03f0b094b8e559092490df1efbfa0ba00fc9dca02dfbb88647cbfdc6/opencv_python_headless-4.9.0.80-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl" -o ./wheels/opencv_python_headless-4.9.0.80-cp37-abi3-manylinux_2_17_aarch64.whl
           
-          # 4. إعداد متغيرات البيئة لإجبار التثبيت المحلي ومنع عزل البيئات
+          # 4. إعداد متغيرات البيئة الأساسية للمجلد المحلي
           export P4A_FORCE_YES=1
           export P4A_NO_PREREQUISITE_CHECK=1
           export P4A_WHEELS_DIR=./wheels
           export PIP_FIND_LINKS=./wheels
-          export PIP_NO_BUILD_ISOLATION=0
           
-          # 5. أمر البناء الشامل لحل مشكلة cython وتثبيت الإصدار المستقر من pyjnius
+          # 5. أمر البناء المتوازن (بدون قيود العزل العنيفة مع توفير cython رسمياً في المتطلبات)
           yes | python3 -m pythonforandroid.toolchain apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
             --bootstrap sdl2 \
-            --requirements python3,cython,kivy,pyjnius==1.6.1 \
+            --requirements python3,cython,kivy,pyjnius \
             --entrypoint service/main.py \
             --arch arm64-v8a \
             --android-api 33 \
             --release --force --no-update
     artifacts:
       - "*.apk"
-
