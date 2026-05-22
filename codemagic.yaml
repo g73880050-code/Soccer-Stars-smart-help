@@ -1,36 +1,32 @@
 workflows:
   android-debug:
-    name: Build APK - Full Setup
+    name: Final Stable Build
     instance_type: mac_mini_m1
     scripts:
-      - name: Install Android SDK and Tools
+      - name: Pre-install Dependencies
         script: |
-          # 1. تثبيت Android SDK عبر brew
-          brew install --cask android-commandlinetools
+          # تثبيت كل ما يحتاجه python-for-android لكي لا يسألنا عن أي شيء
+          brew install automake autoconf libtool
+      - name: Build APK
+        script: |
+          # إجبار التراخيص والموافقة التلقائية
+          export P4A_FORCE_YES=1
+          export ANDROID_HOME=/usr/local/share/android-commandlinetools
           
-          # 2. تثبيت python-for-android وتوابعها
+          # تثبيت الأدوات
           pip3 install --upgrade pip
           pip3 install cython==0.29.33
           pip3 install python-for-android
           pip3 install numpy==1.26.4
-          pip3 install opencv-python-headless==4.6.0.66
-          pip3 install pyjnius
           
-      - name: Build APK
-        script: |
-          export P4A_FORCE_YES=1
-          
-          # مسار الـ SDK (نضيفه يدوياً إذا لزم الأمر)
-          export ANDROID_HOME=/usr/local/share/android-commandlinetools
-          
-          # بناء التطبيق
-          p4a apk --private ./ \
+          # البناء بدون تحديثات وبدون أي تفاعل (Non-interactive)
+          python3 -m pythonforandroid.toolchain apk --private ./ \
             --package com.soccerstars.analyzer \
             --name "Soccer Stars Analyzer" \
             --bootstrap sdl2 \
-            --requirements python3,kivy,numpy==1.26.4,opencv-python-headless==4.6.0.66,pyjnius \
+            --requirements python3,kivy,numpy==1.26.4,pyjnius \
             --entrypoint service/main.py \
             --arch arm64-v8a \
-            --android-api 33 --release --force
+            --android-api 33 --release --force --no-update
     artifacts:
       - "*.apk"
